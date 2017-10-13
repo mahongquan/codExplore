@@ -1,0 +1,23 @@
+{
+  "name": "codeExplore",
+  "version": "1.0.0",
+  "proxy": "http://localhost:8000/",
+  "homepage": ".",
+  "scripts": {
+    "dev": "node server.js",
+    "build": "next build",
+    "start": "react-scripts start"
+  },
+  "dependencies": {
+    "bootstrap": "^3.3.7",
+    "classnames": "^2.2.5",
+    "express": "^4.16.2",
+    "react": "^16.0.0",
+    "react-ace": "^5.4.0",
+    "react-bootstrap": "^0.31.3",
+    "react-dom": "^16.0.0",
+    "react-scripts": "^1.0.14",
+    "socket.io": "^2.0.3",
+    "socket.io-stream": "^0.9.1"
+  }
+}
