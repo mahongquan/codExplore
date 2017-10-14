@@ -11,11 +11,20 @@ var app_root=path.resolve(".")
 //console.log(app_root)
 function toPath(p){
     var stat=fs.statSync(p);
-    return {"path": path.relative(app_root,p),
+    if(stat.isDirectory()){
+      return {"path": path.relative(app_root,p),
             "name": path.basename(p),
             "time": stat.mtimeMs,
-            "isdir": stat.isDirectory(),
-            "size":stat.size}
+            "isdir": true,
+            "size":Number.MAX_VALUE};
+      }
+    else{
+      return {"path": path.relative(app_root,p),
+            "name": path.basename(p),
+            "time": stat.mtimeMs,
+            "isdir": false,
+            "size":stat.size};
+      }
 }
 //console.log(toPath("run.bat"))
 //console.log(toPath("static"))

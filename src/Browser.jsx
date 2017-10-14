@@ -8,19 +8,19 @@ var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
 class File extends React.Component {
     glyphClass=()=>{
-            var className = "glyphicon ";
-            className += this.props.isdir ? "glyphicon-folder-open" : "glyphicon-file";
-            return className;
+        var className = "glyphicon ";
+        className += this.props.isdir ? "glyphicon-folder-open" : "glyphicon-file";
+        return className;
     }
     remove=()=> {
-            socket.emit("remove",{path:this.props.path},()=>{
-                this.props.browser.reloadFilesFromServer();
-            });
+        socket.emit("remove",{path:this.props.path},()=>{
+            this.props.browser.reloadFilesFromServer();
+        });
     }
     rename=(updatedName)=> {
-            socket.emit("rename",{path:this.props.path,name:updatedName},()=>{
-                this.props.browser.reloadFilesFromServer();
-            });
+        socket.emit("rename",{path:this.props.path,name:updatedName},()=>{
+            this.props.browser.reloadFilesFromServer();
+        });
     }
 
     onRemove=(e,data)=>{
@@ -32,47 +32,47 @@ class File extends React.Component {
     }
 
     onRename=(e,data)=>{
-            console.log("onRename");
-            var type = this.props.isdir ? "folder" : "file";
-            var updatedName = prompt("Enter new name for "+type +" "+this.props.name);
-            if (updatedName != null)
-                    this.rename(updatedName);
+        console.log("onRename");
+        var type = this.props.isdir ? "folder" : "file";
+        var updatedName = prompt("Enter new name for "+type +" "+this.props.name);
+        if (updatedName != null)
+                this.rename(updatedName);
     }
 
     renderList=()=>{
-            var dateString =  new Date(this.props.time).toLocaleString();//toGMTString()
-            var glyphClass = this.glyphClass();
-            return (<tr id={this.props.id} ref={this.props.path}>
-                            <td>
-                            <ContextMenuTrigger id={""+this.props.id}>
-                            <a onClick={this.props.onClick}><span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>{this.props.name}</a>
-                            </ContextMenuTrigger>
-                            <ContextMenu id={""+this.props.id}>
-                                <MenuItem data={{a:1}} onClick={this.onRemove}>删除</MenuItem>
-                                <MenuItem data={{a:2}} onClick={this.onRename}>重命名</MenuItem>
-                              </ContextMenu>
-                            </td>
-                            <td>{File.sizeString(this.props.size,this.props.isdir)}</td>
-                            <td>{dateString}</td>
-                            </tr>);
+        var dateString =  new Date(this.props.time).toLocaleString();//toGMTString()
+        var glyphClass = this.glyphClass();
+        return (<tr id={this.props.id} ref={this.props.path}>
+                        <td>
+                        <ContextMenuTrigger id={""+this.props.id}>
+                        <a onClick={this.props.onClick}><span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>{this.props.name}</a>
+                        </ContextMenuTrigger>
+                        <ContextMenu id={""+this.props.id}>
+                            <MenuItem data={{a:1}} onClick={this.onRemove}>删除</MenuItem>
+                            <MenuItem data={{a:2}} onClick={this.onRename}>重命名</MenuItem>
+                          </ContextMenu>
+                        </td>
+                        <td>{File.sizeString(this.props.size,this.props.isdir)}</td>
+                        <td>{dateString}</td>
+                        </tr>);
     }
     renderGrid=()=>{
-            var glyphClass = this.glyphClass();
-            return (
-                <div ref={this.props.path} >
-                    <ContextMenuTrigger id={""+this.props.id}>
-                        <a id={this.props.id} onClick={this.props.onClick}>
-                        <span style={{fontSize:"3.5em"}} className={glyphClass}/>
-                        </a>
-                    </ContextMenuTrigger>
-                                            <ContextMenu id={""+this.props.id}>
-                        <MenuItem data={{a:1}} onClick={this.onRemove}>remove</MenuItem>
-                        <MenuItem data={{a:2}} onClick={this.onRename}>rename</MenuItem>
-                    </ContextMenu>
+        var glyphClass = this.glyphClass();
+        return (
+            <div ref={this.props.path} >
+                <ContextMenuTrigger id={""+this.props.id}>
+                    <a id={this.props.id} onClick={this.props.onClick}>
+                    <span style={{fontSize:"3.5em"}} className={glyphClass}/>
+                    </a>
+                </ContextMenuTrigger>
+                                        <ContextMenu id={""+this.props.id}>
+                    <MenuItem data={{a:1}} onClick={this.onRemove}>remove</MenuItem>
+                    <MenuItem data={{a:2}} onClick={this.onRename}>rename</MenuItem>
+                </ContextMenu>
 
-                    <h4 >{this.props.name}</h4>
+                <h4 >{this.props.name}</h4>
 
-                </div>);
+            </div>);
     }
 
     render=()=>{
@@ -316,10 +316,14 @@ class  Browser extends React.Component {
                             <li id="uploadButton"><a onClick={this.onUpload} ><span className="glyphicon glyphicon-upload"/></a></li>
 
                             <li id="mkdirButton"><a onClick={this.mkdir} ><span className="glyphicon glyphicon-folder-open"/></a></li>
-                            <li id="alternateViewButton"><a onClick={this.alternateView}>
-                           <span ref="altViewSpan" className={className} />
-                            </a></li>
-                            <li><a id="pathSpan"><span className="glyphicon glyphicon-chevron-right"/>{this.state.current_path}</a></li>
+                            <li id="alternateViewButton">
+                                <a onClick={this.alternateView}>   
+                                    <span ref="altViewSpan" className={className} />
+                                </a>
+                            </li>
+                            <li><a id="pathSpan">
+                                <span className="glyphicon glyphicon-chevron-right"/>{this.state.current_path}</a>
+                            </li>
                         </ul>
                     </div>
                 </nav>
