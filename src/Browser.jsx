@@ -3,9 +3,11 @@ import AceEditor from 'react-ace';
 import 'brace/mode/javascript';
 import 'brace/theme/github';
 import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
-import {Tooltip,ButtonToolbar,Button,OverlayTrigger} from "react-bootstrap";
+import {Navbar,Nav,NavItem,Popover,Tooltip,OverlayTrigger} from "react-bootstrap";
+import "./react-contextmenu.css"
 var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
+var ss = require('socket.io-stream');
 class File extends React.Component {
     glyphClass=()=>{
         var className = "glyphicon ";
@@ -41,37 +43,47 @@ class File extends React.Component {
 
     renderList=()=>{
         var dateString =  new Date(this.props.time).toLocaleString();//toGMTString()
-        var glyphClass = this.glyphClass();
+        //var glyphClass = this.glyphClass();
         return (<tr id={this.props.id} ref={this.props.path}>
                         <td>
                         <ContextMenuTrigger id={""+this.props.id}>
-                        <a onClick={this.props.onClick}><span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>{this.props.name}</a>
+                        <a onClick={this.props.onClick}>
+                        {//<span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>
+                        }
+                        {this.props.name}</a>
                         </ContextMenuTrigger>
                         <ContextMenu id={""+this.props.id}>
                             <MenuItem data={{a:1}} onClick={this.onRemove}>删除</MenuItem>
                             <MenuItem data={{a:2}} onClick={this.onRename}>重命名</MenuItem>
-                          </ContextMenu>
+                        </ContextMenu>
                         </td>
                         <td>{File.sizeString(this.props.size,this.props.isdir)}</td>
                         <td>{dateString}</td>
                         </tr>);
     }
     renderGrid=()=>{
-        var glyphClass = this.glyphClass();
+        //var glyphClass = this.glyphClass();
+        let style1;
+        if (this.props.isdir){
+            console.log("isdir");
+            style1={display:"inline-block",marginLeft: "20px",backgroundColor:"#ccc"}
+        }
+        else{
+            style1={display:"inline-block",marginLeft: "20px"}   
+        }
         return (
-            <div ref={this.props.path} >
-                <ContextMenuTrigger id={""+this.props.id}>
-                    <a id={this.props.id} onClick={this.props.onClick}>
-                    <span style={{fontSize:"3.5em"}} className={glyphClass}/>
-                    </a>
+            <div style={style1}  ref={this.props.path} >
+                <ContextMenuTrigger id={""+this.props.id+"2"}>
+                    <a  id={this.props.id} onClick={this.props.onClick}>
+                   {
+                    //<span style={{fontSize:"3.5em"}} className={glyphClass}/>
+                    }
+                    {this.props.name}</a>
                 </ContextMenuTrigger>
-                                        <ContextMenu id={""+this.props.id}>
+                <ContextMenu id={""+this.props.id+"2"}>
                     <MenuItem data={{a:1}} onClick={this.onRemove}>remove</MenuItem>
                     <MenuItem data={{a:2}} onClick={this.onRename}>rename</MenuItem>
                 </ContextMenu>
-
-                <h4 >{this.props.name}</h4>
-
             </div>);
     }
 
@@ -107,7 +119,7 @@ class  Browser extends React.Component {
               paths : ["."],
               files: [],
               sort: File.pathSort,
-              gridView: false,
+              gridView: true,
               current_path:"",
               displayUpload:"none",
           }
@@ -176,37 +188,20 @@ class  Browser extends React.Component {
                     gridView: updatedView
               });
     }
-
-
-    uploadFile=()=>{
-            return function (evt) {
-                    // var path = this.currentPath();
-                    // var readFile = evt.target.files[0];
-                    // var name = readFile.name;
-                    // console.log(readFile);
-
-                    // var formData = new FormData();
-                    // formData.append("file", readFile, name);
-
-                    // var xhr = new XMLHttpRequest();
-                    // xhr.open('POST', buildUploadUrl(path, name) , true);
-                    // xhr.onreadystatechange=function()
-                    // {
-                    //         if (xhr.readyState !== 4)
-                    //                 return;
-
-                    //         if (xhr.status === 200){
-                    //                 alert("Successfully uploaded file "+ name +" to "+ path);
-                    //                 this.reloadFilesFromServer();
-                    //         }
-                    //         else
-                    //                ;// console.log(request.status);
-                    // }.bind(this);
-                    // xhr.send(formData);
-            }//.bind(this)
+    uploadFile=(evt)=>{
+        console.log(evt);
+        var path = this.currentPath();
+        const file = evt.target.files[0];
+        var stream = ss.createStream();
+        // upload a file to the server.
+        var app=this;
+        ss(socket).emit('upload', stream, {path:path,name:file.name,size: file.size},(res)=>{
+           console.log(res);
+           this.reloadFilesFromServer();
+           this.setState({displayUpload:"none"});
+        });
+        ss.createBlobReadStream(file).pipe(stream);
     }
-
-
     componentDidMount=()=>{
         console.log("mount======");
         console.log(this.props.initpath);
@@ -254,7 +249,7 @@ class  Browser extends React.Component {
         var newFolderName = prompt("Enter new folder name");
         if (newFolderName == null)
                 return;
-        socket.emit("/mkdir",{path:this.currentPath(),name:newFolderName},
+        socket.emit("mkdir",{path:this.currentPath(),name:newFolderName},
           this.reloadFilesFromServer
         );
     }
@@ -278,6 +273,36 @@ class  Browser extends React.Component {
       console.log('change',newValue);
       this.setState({value:newValue});
     }
+    genpath=(path)=>{
+        console.log("genpath=============")
+        console.log(path);
+        var paths=path.split("\\");
+        console.log(paths);
+        var r=[]
+        var i=0;
+        while(i<paths.length){
+            var s="";
+            for(var j=0;j<i+1;j++){
+                s+=paths[j];
+                if (j<i) s+="\\";
+            }
+            //console.log(paths[i])
+            //console.log(s)
+            r.push([s,paths[i]])
+            i++;
+        }
+        var hs=r.map((item,idx)=>{
+            return <span key={idx} style={{marginLeft:"6px"}} onClick={()=>{this.linkclick(item[0])}}>{item[1]}\</span>
+        })
+        return hs;
+    }
+    linkclick=(e)=>{
+        console.log(e);
+        this.updatePath(e);
+    }
+    rootclick=()=>{
+        this.updatePath(".")
+    }
     render=()=>{
         console.log(this.state.paths);
         const tooltipback = (
@@ -286,107 +311,102 @@ class  Browser extends React.Component {
         const tooltipparent = (
           <Tooltip id="tooltipparent"><strong>parent</strong></Tooltip>
         );
+        const tooltipupload = (
+          <Tooltip id="tooltipparent"><strong>upload</strong></Tooltip>
+        );
         const files = this.state.files.map(this.mapfunc);
-
+        var pathshow=this.genpath(this.state.current_path);
         var gridGlyph = "glyphicon glyphicon-th-large";
         var listGlyph = "glyphicon glyphicon-list";
         var className = this.state.gridView ? listGlyph : gridGlyph;
         var toolbar=(
-            <div>
-                <nav className="navbar navbar-inverse ">
-                    <div className="navbar-header">
-                            <button type="button" className="navbar-toggle" data-toggle="collapse" data-target="#example-navbar-collapse">
-                                    <span className="sr-only">Toggle navigation</span>
-                                    <span className="icon-bar"></span>
-                                    <span className="icon-bar"></span>
-                                    <span className="icon-bar"></span>
-                            </button>
-                    </div>
-                    <div className="collapse navbar-collapse" id="example-navbar-collapse">
-                        <ul className="nav navbar-nav">
-                            <OverlayTrigger placement="top" overlay={tooltipback}>
-                                <li id="backButton"><a onClick={this.onBack}>
-                                <span className="glyphicon glyphicon-arrow-left">
-                                </span>
-                                </a></li>
-                            </OverlayTrigger>
-                            <OverlayTrigger placement="top" overlay={tooltipparent}>
-                                <li id="parentButton"><a onClick={this.onParent} ><span className="glyphicon glyphicon-arrow-up"/></a></li>
-                            </OverlayTrigger>
-                            <li id="uploadButton"><a onClick={this.onUpload} ><span className="glyphicon glyphicon-upload"/></a></li>
-
-                            <li id="mkdirButton"><a onClick={this.mkdir} ><span className="glyphicon glyphicon-folder-open"/></a></li>
-                            <li id="alternateViewButton">
-                                <a onClick={this.alternateView}>   
-                                    <span ref="altViewSpan" className={className} />
-                                </a>
-                            </li>
-                            <li><a id="pathSpan">
-                                <span className="glyphicon glyphicon-chevron-right"/>{this.state.current_path}</a>
-                            </li>
-                        </ul>
-                    </div>
-                </nav>
-                <input type="file" id="uploadInput" onChange={this.uploadFile()} style={{display:this.state.displayUpload}} /></div>);
+<div>
+<Navbar inverse collapseOnSelect>
+    <Navbar.Header>
+      <Navbar.Brand>
+      </Navbar.Brand>
+      <Navbar.Toggle />
+    </Navbar.Header>
+    <Navbar.Collapse>
+      <Nav>
+        <NavItem eventKey={1} href="#">
+            <OverlayTrigger placement="bottom" overlay={tooltipback}>
+                <span onClick={this.onBack} className="glyphicon glyphicon-arrow-left">
+                </span>
+            </OverlayTrigger>
+        </NavItem>
+        <NavItem eventKey={2} href="#">
+            <OverlayTrigger placement="bottom" overlay={tooltipparent}>
+                <span onClick={this.onParent} className="glyphicon glyphicon-arrow-up"/>
+           </OverlayTrigger>
+        </NavItem>
+        <NavItem eventKey={3} href="#">
+            <OverlayTrigger placement="bottom" overlay={tooltipupload}>
+            <span  onClick={this.onUpload} className="glyphicon glyphicon-upload"/>
+            </OverlayTrigger>
+        </NavItem>
+        <NavItem eventKey={4} href="#">
+            <span onClick={this.mkdir} >
+                <i style={{fontSize: 8,verticalAlign:"top"}} className="glyphicon glyphicon-plus"></i>
+                <span className="glyphicon glyphicon-folder-open"/>
+            </span>
+        </NavItem>
+        <NavItem eventKey={5} href="#">   
+            <span onClick={this.alternateView} ref="altViewSpan" className={className} />
+        </NavItem>
+        <NavItem eventKey={6} href="#">
+            <span onClick={this.rootclick} className="glyphicon glyphicon-chevron-right"/>
+            {pathshow}
+        </NavItem>
+      </Nav>
+    </Navbar.Collapse>
+  </Navbar>
+<input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} /></div>);
+            const ace=<AceEditor
+                style={{width:"100%",zIndex:2,}}
+                mode="javascript"
+                theme="github"
+                value={this.state.value}
+                onChange={this.onChange}
+                name="UNIQUE_ID_OF_DIV"
+                editorProps={{$blockScrolling: true}}
+            />;
             if (this.state.gridView)
             {
-                var files2=[];
-                var row=[]
-                var ncols=3
-                for(var i in files){
-                    if (i % ncols ===0)
-                    {
-                        if (row.length>0){
-                            files2.push(row)
-                            row=[]
-                            row.push(files[i]);
-                        }
-                        else{
-                            row.push(files[i]);   
-                        }
-                    }
-                    else{
-                        row.push(files[i]);
-                    }
-                }
-                if(row.length>0){files2.push(row)}
-                var files2_t=[]
-                for(i in files2){
-                    var cols=[]
-                    for(var j in files2[i]){
-                        cols.push((<td key={j} >{files2[i][j]}</td>))
-                    }
-                    row=(<tr key={i}>{cols}</tr>);
-                    files2_t.push(row);
-                }
-                return (<div><AceEditor
-                    mode="javascript"
-                    theme="github"
-                    value={this.state.value}
-                    onChange={this.onChange}
-                    name="UNIQUE_ID_OF_DIV"
-                    editorProps={{$blockScrolling: true}}
-                      />
-                    {toolbar}
-                    <table>
-                    <tbody>{files2_t}
-                    </tbody>
-                    </table>
+                return (
+                    <div>
+                        <Popover
+                          id="popover-basic"
+                          placement="right"
+                          positionLeft={0}
+                          positionTop={0}
+                        >
+                         <div>rename</div>
+                         <div>remove</div>
+                        </Popover>
+                        <div style={{width:"100%",
+                                zIndex:1,
+                                maxHeight:"300px",
+                                overflow:"scroll"}}>
+                            {toolbar}
+                            <div  style={ {display : "inline"}}>
+                            {files}
+                            </div>
+                        </div>
+                        {ace}
                     </div>);
 
             }
             else{
               var sortGlyph = "glyphicon glyphicon-sort";
-              return (<div><AceEditor
-                            value={this.state.value}
-                            mode="javascript"
-                            theme="github"
-                            onChange={this.onChange}
-                            name="UNIQUE_ID_OF_DIV"
-                            editorProps={{$blockScrolling: true}}
-                          />
-                              {toolbar}
-                              <table className="table table-responsive table-striped table-hover">
+              return (
+                <div> 
+                         <div style={{width:"100%",
+                                zIndex:2,
+                                maxHeight:"300px",
+                                overflow:"scroll"}}>
+                            {toolbar}
+                            <table className="table table-responsive table-striped table-hover">
                               <thead><tr>
                               <th><button onClick={this.pathSort} className="btn btn-default"><span className={sortGlyph}/>名称</button></th>
                               <th><button onClick={this.sizeSort} className="btn btn-default"><span className={sortGlyph}/>大小</button></th>
@@ -396,7 +416,8 @@ class  Browser extends React.Component {
                               {files}
                               </tbody>
                               </table>
-
+                        </div>
+                        {ace}
                 </div>)
             }
     }
