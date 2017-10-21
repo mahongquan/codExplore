@@ -33,15 +33,19 @@ function path_isdir(p){
 }
 function toPath(p){
     var stat=fs.statSync(p);
+    // console.log("=toPath===============")
+    // console.log(app_root)
+    // console.log(p);
+    var lp=p.substring(app_root.length+1);
     if(stat.isDirectory()){
-      return {"path": path.relative(app_root,p),
+      return {"path": lp,
             "name": path.basename(p),
             "time": stat.mtimeMs,
             "isdir": true,
             "size":Number.MAX_VALUE};
       }
     else{
-      return {"path": path.relative(app_root,p),
+      return {"path": lp,
             "name": path.basename(p),
             "time": stat.mtimeMs,
             "isdir": false,
@@ -81,7 +85,7 @@ function children(path1){
 }
 //console.info(children("."))
 function parent(path1){
-    let parent1
+  let parent1
   if(path1 === app_root){
       parent1 = path1
     }
@@ -175,6 +179,15 @@ io.sockets.on('connection', function( socket ) {
     console.log("content")
     console.log(data);
     callback(content(data.path));
+  });  
+  socket.on('savefile', function( data, callback ) {       
+    console.log("savefile")
+    console.log(data);
+    var p = toLocalPath(data.path);
+    var stream=fs.createWriteStream(p)
+    stream.write(data.content,"utf-8");
+    stream.end();
+    callback({success:true});
   });  
   ss(socket).on('upload', function(stream, data,callback) {
     var p = toLocalPath(data.path);

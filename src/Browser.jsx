@@ -3,7 +3,7 @@ import AceEditor from 'react-ace';
 import 'brace/mode/javascript';
 import 'brace/theme/github';
 //import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
-import {Overlay,Navbar,Nav,NavItem,Tooltip,OverlayTrigger} from "react-bootstrap";
+import {Button,Overlay,Navbar,Nav,NavItem,Tooltip,OverlayTrigger} from "react-bootstrap";
 import update from 'immutability-helper';
 //import "./react-contextmenu.css"
 var io = require("socket.io-client");
@@ -79,7 +79,6 @@ class File extends React.Component {
     }
 };
 class  Browser extends React.Component {
-
     state= {
           paths : ["."],
           files: [],
@@ -89,7 +88,10 @@ class  Browser extends React.Component {
           displayUpload:"none",
           showcontext: false,
           target:null,
-          backgroundColor:[]
+          backgroundColor:[],
+          openfilepath:null,
+          filecontent:"",
+          filechange:false,
     }
   handleContextMenu = (event) => {
     //console.log(event);
@@ -218,8 +220,13 @@ class  Browser extends React.Component {
         //console.log(url);
         //window.open(url, url, 'height=800,width=800,resizable=yes,scrollbars=yes');
         socket.emit("content",{path:path},(data)=>{
-            console.log(data);
-            this.setState({value:data,showcontext:false});
+            //console.log(data);
+            this.setState({
+                filecontent:data
+                ,filechange:false
+                ,showcontext:false
+                ,openfilepath:path
+            });
         });
     }
     mkdir=()=>{
@@ -249,8 +256,11 @@ class  Browser extends React.Component {
             />);
     }
     onChange=(newValue)=>{
-      console.log('change',newValue);
-      this.setState({value:newValue});
+      //console.log('change',newValue);
+        this.setState({
+            filecontent:newValue
+            ,filechange:true
+        });
     }
     genpath=(path)=>{
         //console.log("genpath=============")
@@ -321,6 +331,12 @@ class  Browser extends React.Component {
             });
         }
     }
+    savefilecontent=()=>{
+        socket.emit("savefile",{path:this.state.openfilepath,content:this.state.filecontent},()=>{
+                this.reloadFilesFromServer();
+                this.setState({showcontext:false});
+        });
+    }
     render=()=>{
         console.log(this.state.paths);
         const tooltipback = (
@@ -365,16 +381,16 @@ class  Browser extends React.Component {
                             <span onClick={this.onParent} className="glyphicon glyphicon-arrow-up"/>
                        </OverlayTrigger>
                     </NavItem>
-                    <NavItem eventKey={3} href="#">
-                        <OverlayTrigger placement="bottom" overlay={tooltipupload}>
-                        <span  onClick={this.onUpload} className="glyphicon glyphicon-upload"/>
-                        </OverlayTrigger>
-                    </NavItem>
                     <NavItem eventKey={4} href="#">
                         <span onClick={this.mkdir} >
                             <i style={{fontSize: 8,verticalAlign:"top"}} className="glyphicon glyphicon-plus"></i>
                             <span className="glyphicon glyphicon-folder-open"/>
                         </span>
+                    </NavItem>
+                    <NavItem eventKey={3} href="#">
+                        <OverlayTrigger placement="bottom" overlay={tooltipupload}>
+                        <span  onClick={this.onUpload} className="glyphicon glyphicon-upload"/>
+                        </OverlayTrigger>
                     </NavItem>
                     <NavItem eventKey={5} href="#">   
                         <span onClick={this.alternateView} ref="altViewSpan" className={className} />
@@ -389,14 +405,21 @@ class  Browser extends React.Component {
             <input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} />
             </div>
         );
-        const ace=(<AceEditor
-            style={{width:"100%"}}
-            mode="javascript"
-            theme="github"
-            value={this.state.value}
-            onChange={this.onChange}
-            name="UNIQUE_ID_OF_DIV"
-            editorProps={{$blockScrolling: true}}/>
+        const ace=(
+            <div>
+                <Button disabled={!this.state.filechange} 
+                    onClick={this.savefilecontent}>save
+                </Button>
+                <AceEditor
+                style={{width:"100%"}}
+                mode="javascript"
+                theme="github"
+                value={this.state.filecontent}
+                onChange={this.onChange}
+                name="UNIQUE_ID_OF_DIV"
+                editorProps={{$blockScrolling: true}}
+                />
+            </div>
         );
         let dircontent;
         if (this.state.gridView)
