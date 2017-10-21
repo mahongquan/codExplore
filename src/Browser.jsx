@@ -4,6 +4,7 @@ import 'brace/mode/javascript';
 import 'brace/theme/github';
 //import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
 import {Overlay,Navbar,Nav,NavItem,Tooltip,OverlayTrigger} from "react-bootstrap";
+import update from 'immutability-helper';
 //import "./react-contextmenu.css"
 var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
@@ -88,6 +89,7 @@ class  Browser extends React.Component {
           displayUpload:"none",
           showcontext: false,
           target:null,
+          backgroundColor:[]
     }
   handleContextMenu = (event) => {
     //console.log(event);
@@ -253,7 +255,7 @@ class  Browser extends React.Component {
     genpath=(path)=>{
         //console.log("genpath=============")
         //console.log(path);
-        var paths=path.split("\\");
+        var paths=path.split("/");
         //console.log(paths);
         var r=[]
         var i=0;
@@ -261,17 +263,33 @@ class  Browser extends React.Component {
             var s="";
             for(var j=0;j<i+1;j++){
                 s+=paths[j];
-                if (j<i) s+="\\";
+                if (j<i) s+="/";
             }
             //console.log(paths[i])
             //console.log(s)
             r.push([s,paths[i]])
             i++;
         }
+        console.log(this.state.backgroundColor);
         var hs=r.map((item,idx)=>{
-            return <span key={idx} style={{marginLeft:"6px"}} onClick={()=>{this.linkclick(item[0])}}>{item[1]}\</span>
+            return <span key={idx} 
+                onMouseEnter={()=>this.onMouseEnter(idx)}
+                onMouseLeave={()=>this.onMouseLeave(idx)}
+                style={{marginLeft:"6px",backgroundColor:this.state.backgroundColor[idx]}} 
+                onClick={()=>{this.linkclick(item[0])}}>{item[1]}/</span>
         })
         return hs;
+    }
+    onMouseLeave=(idx)=>{
+        console.log(idx);
+        console.log(this.state.backgroundColor);
+        const bg2=update(this.state.backgroundColor,{[idx]:{$set:"#000"}})
+        console.log(bg2);
+        this.setState({backgroundColor:bg2});
+    }
+    onMouseEnter=(idx)=>{
+        const bg2=update(this.state.backgroundColor,{[idx]:{$set:"#C00"}})
+        this.setState({backgroundColor:bg2});
     }
     linkclick=(e)=>{
         console.log(e);
@@ -320,104 +338,100 @@ class  Browser extends React.Component {
         var listGlyph = "glyphicon glyphicon-list";
         var className = this.state.gridView ? listGlyph : gridGlyph;
         var toolbar=(
-<div>
-<Overlay target={this.state.target} 
-    container={this} show={this.state.showcontext}  placement="bottom">
-    <Tooltip id="tooltip1" >
-        <div onClick={this.onRename}>rename</div>
-        <div onClick={this.onRemove}>remove</div>
-    </Tooltip>
-</Overlay>
-<Navbar inverse collapseOnSelect>
-    <Navbar.Header>
-      <Navbar.Brand>
-      </Navbar.Brand>
-      <Navbar.Toggle />
-    </Navbar.Header>
-    <Navbar.Collapse>
-      <Nav>
-        <NavItem eventKey={1} href="#">
-            <OverlayTrigger placement="bottom" overlay={tooltipback}>
-                <span onClick={this.onBack} className="glyphicon glyphicon-arrow-left">
-                </span>
-            </OverlayTrigger>
-        </NavItem>
-        <NavItem eventKey={2} href="#">
-            <OverlayTrigger placement="bottom" overlay={tooltipparent}>
-                <span onClick={this.onParent} className="glyphicon glyphicon-arrow-up"/>
-           </OverlayTrigger>
-        </NavItem>
-        <NavItem eventKey={3} href="#">
-            <OverlayTrigger placement="bottom" overlay={tooltipupload}>
-            <span  onClick={this.onUpload} className="glyphicon glyphicon-upload"/>
-            </OverlayTrigger>
-        </NavItem>
-        <NavItem eventKey={4} href="#">
-            <span onClick={this.mkdir} >
-                <i style={{fontSize: 8,verticalAlign:"top"}} className="glyphicon glyphicon-plus"></i>
-                <span className="glyphicon glyphicon-folder-open"/>
-            </span>
-        </NavItem>
-        <NavItem eventKey={5} href="#">   
-            <span onClick={this.alternateView} ref="altViewSpan" className={className} />
-        </NavItem>
-        <NavItem eventKey={6} href="#">
-            <span onClick={this.rootclick} className="glyphicon glyphicon-chevron-right"/>
-            {pathshow}
-        </NavItem>
-      </Nav>
-    </Navbar.Collapse>
-  </Navbar>
-<input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} /></div>
+            <div>
+            <Overlay target={this.state.target} 
+                container={this} show={this.state.showcontext}  placement="bottom">
+                <Tooltip id="tooltip1" >
+                    <div onClick={this.onRename}>rename</div>
+                    <div onClick={this.onRemove}>remove</div>
+                </Tooltip>
+            </Overlay>
+            <Navbar inverse collapseOnSelect>
+                <Navbar.Header>
+                  <Navbar.Brand>
+                  </Navbar.Brand>
+                  <Navbar.Toggle />
+                </Navbar.Header>
+                <Navbar.Collapse>
+                  <Nav>
+                    <NavItem eventKey={1} href="#">
+                        <OverlayTrigger placement="bottom" overlay={tooltipback}>
+                            <span onClick={this.onBack} className="glyphicon glyphicon-arrow-left">
+                            </span>
+                        </OverlayTrigger>
+                    </NavItem>
+                    <NavItem eventKey={2} href="#">
+                        <OverlayTrigger placement="bottom" overlay={tooltipparent}>
+                            <span onClick={this.onParent} className="glyphicon glyphicon-arrow-up"/>
+                       </OverlayTrigger>
+                    </NavItem>
+                    <NavItem eventKey={3} href="#">
+                        <OverlayTrigger placement="bottom" overlay={tooltipupload}>
+                        <span  onClick={this.onUpload} className="glyphicon glyphicon-upload"/>
+                        </OverlayTrigger>
+                    </NavItem>
+                    <NavItem eventKey={4} href="#">
+                        <span onClick={this.mkdir} >
+                            <i style={{fontSize: 8,verticalAlign:"top"}} className="glyphicon glyphicon-plus"></i>
+                            <span className="glyphicon glyphicon-folder-open"/>
+                        </span>
+                    </NavItem>
+                    <NavItem eventKey={5} href="#">   
+                        <span onClick={this.alternateView} ref="altViewSpan" className={className} />
+                    </NavItem>
+                    <NavItem eventKey={6} href="#">
+                        <span onClick={this.rootclick} className="glyphicon glyphicon-chevron-right"/>
+                        {pathshow}
+                    </NavItem>
+                  </Nav>
+                </Navbar.Collapse>
+              </Navbar>
+            <input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} />
+            </div>
+        );
+        const ace=(<AceEditor
+            style={{width:"100%"}}
+            mode="javascript"
+            theme="github"
+            value={this.state.value}
+            onChange={this.onChange}
+            name="UNIQUE_ID_OF_DIV"
+            editorProps={{$blockScrolling: true}}/>
+        );
+        let dircontent;
+        if (this.state.gridView)
+        {
+            dircontent=(
+                <div  style={ {display : "inline"}}>
+                {files}
+                </div>
             );
-            const ace=<AceEditor
-                style={{width:"100%"}}
-                mode="javascript"
-                theme="github"
-                value={this.state.value}
-                onChange={this.onChange}
-                name="UNIQUE_ID_OF_DIV"
-                editorProps={{$blockScrolling: true}}
-            />;
-            if (this.state.gridView)
-            {
-                return (
-                    <div>
-                        <div style={{width:"100%",
-                                maxHeight:"300px",
-                                overflow:"scroll"}}>
-                            {toolbar}
-                            <div  style={ {display : "inline"}}>
-                            {files}
-                            </div>
-                        </div>
-                        {ace}
-                    </div>);
-
-            }
-            else{
-              var sortGlyph = "glyphicon glyphicon-sort";
-              return (
-                <div> 
-                     <div style={{width:"100%",
-                            zIndex:2,
+        }
+        else{
+            dircontent=(
+                <table className="table table-responsive table-striped table-hover">
+                  <thead><tr>
+                  <th><button onClick={this.pathSort} className="btn btn-default"><span className="glyphicon glyphicon-sort"/>名称</button></th>
+                  <th><button onClick={this.sizeSort} className="btn btn-default"><span className="glyphicon glyphicon-sort"/>大小</button></th>
+                  <th><button onClick={this.timeSort} className="btn btn-default"><span className="glyphicon glyphicon-sort"/>修改日期</button></th>
+                  </tr></thead>
+                  <tbody>
+                  {files}
+                  </tbody>
+                </table>
+            );
+        }
+        return (
+                <div>
+                    <div style={{width:"100%",
                             maxHeight:"300px",
                             overflow:"scroll"}}>
                         {toolbar}
-                        <table className="table table-responsive table-striped table-hover">
-                          <thead><tr>
-                          <th><button onClick={this.pathSort} className="btn btn-default"><span className={sortGlyph}/>名称</button></th>
-                          <th><button onClick={this.sizeSort} className="btn btn-default"><span className={sortGlyph}/>大小</button></th>
-                          <th><button onClick={this.timeSort} className="btn btn-default"><span className={sortGlyph}/>修改日期</button></th>
-                          </tr></thead>
-                          <tbody>
-                          {files}
-                          </tbody>
-                          </table>
+                        {dircontent}
                     </div>
                     {ace}
-                </div>)
-            }
+                </div>
+        );
     }
 }
 
