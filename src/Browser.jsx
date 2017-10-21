@@ -288,7 +288,7 @@ class  Browser extends React.Component {
         this.setState({backgroundColor:bg2});
     }
     onMouseEnter=(idx)=>{
-        const bg2=update(this.state.backgroundColor,{[idx]:{$set:"#C00"}})
+        const bg2=update(this.state.backgroundColor,{[idx]:{$set:"#00C"}})
         this.setState({backgroundColor:bg2});
     }
     linkclick=(e)=>{
@@ -402,7 +402,7 @@ class  Browser extends React.Component {
         if (this.state.gridView)
         {
             dircontent=(
-                <div  style={ {display : "inline"}}>
+                <div  style={{display : "inline"}}>
                 {files}
                 </div>
             );
@@ -424,6 +424,7 @@ class  Browser extends React.Component {
         return (
                 <div>
                     <div style={{width:"100%",
+                            backgroundColor:"#888", 
                             maxHeight:"300px",
                             overflow:"scroll"}}>
                         {toolbar}
