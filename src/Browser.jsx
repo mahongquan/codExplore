@@ -2,9 +2,9 @@ import React from 'react';
 import AceEditor from 'react-ace';
 import 'brace/mode/javascript';
 import 'brace/theme/github';
-import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
-import {Navbar,Nav,NavItem,Popover,Tooltip,OverlayTrigger} from "react-bootstrap";
-import "./react-contextmenu.css"
+//import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
+import {Overlay,Navbar,Nav,NavItem,Popover,Tooltip,OverlayTrigger} from "react-bootstrap";
+//import "./react-contextmenu.css"
 var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
 var ss = require('socket.io-stream');
@@ -14,48 +14,42 @@ class File extends React.Component {
         className += this.props.isdir ? "glyphicon-folder-open" : "glyphicon-file";
         return className;
     }
-    remove=()=> {
-        socket.emit("remove",{path:this.props.path},()=>{
-            this.props.browser.reloadFilesFromServer();
-        });
-    }
-    rename=(updatedName)=> {
-        socket.emit("rename",{path:this.props.path,name:updatedName},()=>{
-            this.props.browser.reloadFilesFromServer();
-        });
-    }
+    // remove=()=> {
+    //     socket.emit("remove",{path:this.props.path},()=>{
+    //         this.props.browser.reloadFilesFromServer();
+    //     });
+    // }
+    // rename=(updatedName)=> {
+    //     socket.emit("rename",{path:this.props.path,name:updatedName},()=>{
+    //         this.props.browser.reloadFilesFromServer();
+    //     });
+    // }
 
-    onRemove=(e,data)=>{
-        console.log("onRemove");
-        var type = this.props.isdir ? "folder" : "file";
-        var remove =window.confirm("Remove "+type +" '"+ this.props.path +"' ?");
-        if (remove)
-                this.remove();
-    }
+    // onRemove=(e,data)=>{
+    //     console.log("onRemove");
+    //     var type = this.props.isdir ? "folder" : "file";
+    //     var remove =window.confirm("Remove "+type +" '"+ this.props.path +"' ?");
+    //     if (remove)
+    //             this.remove();
+    // }
 
-    onRename=(e,data)=>{
-        console.log("onRename");
-        var type = this.props.isdir ? "folder" : "file";
-        var updatedName = prompt("Enter new name for "+type +" "+this.props.name);
-        if (updatedName != null)
-                this.rename(updatedName);
-    }
+    // onRename=(e,data)=>{
+    //     console.log("onRename");
+    //     var type = this.props.isdir ? "folder" : "file";
+    //     var updatedName = prompt("Enter new name for "+type +" "+this.props.name);
+    //     if (updatedName != null)
+    //             this.rename(updatedName);
+    // }
 
     renderList=()=>{
         var dateString =  new Date(this.props.time).toLocaleString();//toGMTString()
         //var glyphClass = this.glyphClass();
         return (<tr id={this.props.id} ref={this.props.path}>
                         <td>
-                        <ContextMenuTrigger id={""+this.props.id}>
                         <a onClick={this.props.onClick}>
                         {//<span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>
                         }
                         {this.props.name}</a>
-                        </ContextMenuTrigger>
-                        <ContextMenu id={""+this.props.id}>
-                            <MenuItem data={{a:1}} onClick={this.onRemove}>删除</MenuItem>
-                            <MenuItem data={{a:2}} onClick={this.onRename}>重命名</MenuItem>
-                        </ContextMenu>
                         </td>
                         <td>{File.sizeString(this.props.size,this.props.isdir)}</td>
                         <td>{dateString}</td>
@@ -73,17 +67,8 @@ class File extends React.Component {
         }
         return (
             <div style={style1}  ref={this.props.path} >
-                <ContextMenuTrigger id={""+this.props.id+"2"}>
-                    <a  id={this.props.id} onClick={this.props.onClick}>
-                   {
-                    //<span style={{fontSize:"3.5em"}} className={glyphClass}/>
-                    }
+                <a  onContextMenu={this.props.handleContextMenu} id={this.props.id} onClick={this.props.onClick}>
                     {this.props.name}</a>
-                </ContextMenuTrigger>
-                <ContextMenu id={""+this.props.id+"2"}>
-                    <MenuItem data={{a:1}} onClick={this.onRemove}>remove</MenuItem>
-                    <MenuItem data={{a:2}} onClick={this.onRename}>rename</MenuItem>
-                </ContextMenu>
             </div>);
     }
 
@@ -115,15 +100,23 @@ class File extends React.Component {
     }
 };
 class  Browser extends React.Component {
-     state= {
-              paths : ["."],
-              files: [],
-              sort: File.pathSort,
-              gridView: true,
-              current_path:"",
-              displayUpload:"none",
-          }
 
+    state= {
+          paths : ["."],
+          files: [],
+          sort: File.pathSort,
+          gridView: true,
+          current_path:".",
+          displayUpload:"none",
+          showcontext: false,
+          target:null,
+    }
+  handleContextMenu = (event) => {
+    console.log(event);
+    event.preventDefault();
+    event.stopPropagation();
+    this.setState({target:event.target,showcontext:true});
+  }
     loadFilesFromServer=(path)=>{
         var self=this;
             socket.emit("list",{path:path},(data)=>{
@@ -264,10 +257,12 @@ class  Browser extends React.Component {
         }
     }
     mapfunc=(f, idx)=>{
-      var id  =  File.id(f.name);
-      return (<File key={idx}  id={id} gridView={this.state.gridView} onClick={()=>this.onClick(f)} 
-      path={f.path} name={f.name} isdir={f.isdir} size={f.size} time={f.time} browser={this}
-      />)
+        var id  =  File.id(f.name);
+        return (
+            <File key={idx}  id={id} gridView={this.state.gridView} onClick={()=>this.onClick(f)} 
+                handleContextMenu={this.handleContextMenu}
+                path={f.path} name={f.name} isdir={f.isdir} size={f.size} time={f.time} browser={this}
+            />);
     }
     onChange=(newValue)=>{
       console.log('change',newValue);
@@ -303,6 +298,29 @@ class  Browser extends React.Component {
     rootclick=()=>{
         this.updatePath(".")
     }
+    onRename=()=>{
+        //var type = this.props.isdir ? "folder" : "file";
+        var path=this.state.current_path+"/"+this.state.target.text;
+        var updatedName = prompt("Enter new name for "+this.state.target.text);
+        if (updatedName != null){
+            socket.emit("rename",{path:path,name:updatedName},()=>{
+                this.reloadFilesFromServer();
+                this.setState({showcontext:false});
+            });
+        }
+    }
+    onRemove=()=>{
+        console.log("onRemove");
+        //var type = this.props.isdir ? "folder" : "file";
+        var path=this.state.current_path+"/"+this.state.target.text;
+        var remove =window.confirm("Remove  '"+ path +"' ?");
+        if (remove){
+            socket.emit("remove",{path:path},()=>{
+                this.reloadFilesFromServer();
+                this.setState({showcontext:false});
+            });
+        }
+    }
     render=()=>{
         console.log(this.state.paths);
         const tooltipback = (
@@ -321,6 +339,13 @@ class  Browser extends React.Component {
         var className = this.state.gridView ? listGlyph : gridGlyph;
         var toolbar=(
 <div>
+<Overlay target={this.state.target} 
+    container={this} show={this.state.showcontext}  placement="bottom">
+    <Tooltip id="tooltip1" >
+        <div onClick={this.onRename}>rename</div>
+        <div onClick={this.onRemove}>remove</div>
+    </Tooltip>
+</Overlay>
 <Navbar inverse collapseOnSelect>
     <Navbar.Header>
       <Navbar.Brand>
@@ -363,7 +388,7 @@ class  Browser extends React.Component {
   </Navbar>
 <input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} /></div>);
             const ace=<AceEditor
-                style={{width:"100%",zIndex:2,}}
+                style={{width:"100%"}}
                 mode="javascript"
                 theme="github"
                 value={this.state.value}
@@ -375,17 +400,7 @@ class  Browser extends React.Component {
             {
                 return (
                     <div>
-                        <Popover
-                          id="popover-basic"
-                          placement="right"
-                          positionLeft={0}
-                          positionTop={0}
-                        >
-                         <div>rename</div>
-                         <div>remove</div>
-                        </Popover>
                         <div style={{width:"100%",
-                                zIndex:1,
                                 maxHeight:"300px",
                                 overflow:"scroll"}}>
                             {toolbar}

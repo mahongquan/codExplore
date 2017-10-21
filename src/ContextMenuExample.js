@@ -23,7 +23,7 @@ class  ContextMenuExample extends  React.Component{
   	const data=["clickme","clickme","clickme"];
   	const views=data.map((item,idx)=>{
   		return(
-  			<span idx={idx}  onContextMenu={this.handleContextMenu}>
+  			<span key={idx}  onContextMenu={this.handleContextMenu}>
 	          Click me!
 	        </span>
 		);
@@ -31,7 +31,7 @@ class  ContextMenuExample extends  React.Component{
   	//var target1=ReactDOM.findDOMNode(this.refs.target);
     return (
       <div >
-         <Overlay target={this.state.target} 
+        <Overlay target={this.state.target} 
         container={this} show={this.state.showcontext}  placement="bottom">
         	<Tooltip id="tooltip1" >
 	        	<div onClick={this.rename}>rename</div>
