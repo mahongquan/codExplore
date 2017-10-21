@@ -3,7 +3,7 @@ import AceEditor from 'react-ace';
 import 'brace/mode/javascript';
 import 'brace/theme/github';
 //import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
-import {Overlay,Navbar,Nav,NavItem,Popover,Tooltip,OverlayTrigger} from "react-bootstrap";
+import {Overlay,Navbar,Nav,NavItem,Tooltip,OverlayTrigger} from "react-bootstrap";
 //import "./react-contextmenu.css"
 var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
@@ -14,41 +14,20 @@ class File extends React.Component {
         className += this.props.isdir ? "glyphicon-folder-open" : "glyphicon-file";
         return className;
     }
-    // remove=()=> {
-    //     socket.emit("remove",{path:this.props.path},()=>{
-    //         this.props.browser.reloadFilesFromServer();
-    //     });
-    // }
-    // rename=(updatedName)=> {
-    //     socket.emit("rename",{path:this.props.path,name:updatedName},()=>{
-    //         this.props.browser.reloadFilesFromServer();
-    //     });
-    // }
-
-    // onRemove=(e,data)=>{
-    //     console.log("onRemove");
-    //     var type = this.props.isdir ? "folder" : "file";
-    //     var remove =window.confirm("Remove "+type +" '"+ this.props.path +"' ?");
-    //     if (remove)
-    //             this.remove();
-    // }
-
-    // onRename=(e,data)=>{
-    //     console.log("onRename");
-    //     var type = this.props.isdir ? "folder" : "file";
-    //     var updatedName = prompt("Enter new name for "+type +" "+this.props.name);
-    //     if (updatedName != null)
-    //             this.rename(updatedName);
-    // }
-
     renderList=()=>{
         var dateString =  new Date(this.props.time).toLocaleString();//toGMTString()
         //var glyphClass = this.glyphClass();
+        let style1;
+        if (this.props.isdir){
+            console.log("isdir");
+            style1={backgroundColor:"#cc0"}
+        }
+        else{
+            style1={}   
+        }
         return (<tr id={this.props.id} ref={this.props.path}>
                         <td>
-                        <a onClick={this.props.onClick}>
-                        {//<span style={{fontSize:"1.5em", paddingRight:"10px"}} className={glyphClass}/>
-                        }
+                        <a style={style1} onContextMenu={this.props.handleContextMenu} onClick={this.props.onClick}>
                         {this.props.name}</a>
                         </td>
                         <td>{File.sizeString(this.props.size,this.props.isdir)}</td>
@@ -59,16 +38,15 @@ class File extends React.Component {
         //var glyphClass = this.glyphClass();
         let style1;
         if (this.props.isdir){
-            console.log("isdir");
-            style1={display:"inline-block",marginLeft: "20px",backgroundColor:"#ccc"}
+            //console.log("isdir");
+            style1={display:"inline-block" ,marginRight:"10px", marginLeft: "10px",backgroundColor:"#cc0"}
         }
         else{
-            style1={display:"inline-block",marginLeft: "20px"}   
+            style1={display:"inline-block",marginRight:"10px",marginLeft: "10px"}   
         }
         return (
-            <div style={style1}  ref={this.props.path} >
-                <a  onContextMenu={this.props.handleContextMenu} id={this.props.id} onClick={this.props.onClick}>
-                    {this.props.name}</a>
+            <div style={style1} onContextMenu={this.props.handleContextMenu}  onClick={this.props.onClick}>
+                {this.props.name}
             </div>);
     }
 
@@ -112,24 +90,28 @@ class  Browser extends React.Component {
           target:null,
     }
   handleContextMenu = (event) => {
-    console.log(event);
+    //console.log(event);
     event.preventDefault();
     event.stopPropagation();
     this.setState({target:event.target,showcontext:true});
+    setTimeout(()=>{
+            this.setState({showcontext:false});
+        },5000);
   }
     loadFilesFromServer=(path)=>{
         var self=this;
             socket.emit("list",{path:path},(data)=>{
-                    var files = data.children.sort(self.state.sort);
-                    var paths = self.state.paths;
-                    if (paths[paths.length-1] !== path)
-                    paths = paths.concat([path])
-                    self.setState(
-                            {files: files,
-                                    paths: paths,
-                            sort: self.state.sort,
-                            gridView: self.state.gridView});
-                    self.updateNavbarPath(self.currentPath());
+                var files = data.children.sort(self.state.sort);
+                var paths = self.state.paths;
+                if (paths[paths.length-1] !== path) paths = paths.concat([path])
+                self.setState(
+                    {files: files,
+                     paths: paths,
+                     sort: self.state.sort,
+                     gridView: self.state.gridView,
+                     showcontext:false
+                    });
+                self.updateNavbarPath(self.currentPath());
             });
     }
     updateNavbarPath=(path)=>{
@@ -150,17 +132,17 @@ class  Browser extends React.Component {
     }
 
     onBack =()=>{
-            if (this.state.paths.length <2) {
-                    alert("Cannot go back from "+ this.currentPath());
-                    return;
-            }
-            var paths2=this.state.paths.slice(0,-1);
-            this.setState({paths:paths2});
-            this.loadFilesFromServer(paths2[paths2.length-1])
+        if (this.state.paths.length <2) {
+                alert("Cannot go back from "+ this.currentPath());
+                return;
+        }
+        var paths2=this.state.paths.slice(0,-1);
+        this.setState({paths:paths2});
+        this.loadFilesFromServer(paths2[paths2.length-1])
     }
 
     onUpload=()=>{
-            this.setState({displayUpload:""});
+        this.setState({displayUpload:""});
     }
 
     onParent=()=>{
@@ -174,12 +156,13 @@ class  Browser extends React.Component {
     }
 
     alternateView=()=>{
-            var updatedView = !  this.state.gridView;
+        var updatedView = !  this.state.gridView;
 
-            this.setState(
-              {
-                    gridView: updatedView
-              });
+        this.setState(
+          {
+                gridView: updatedView,
+                showcontext:false
+          });
     }
     uploadFile=(evt)=>{
         console.log(evt);
@@ -187,7 +170,6 @@ class  Browser extends React.Component {
         const file = evt.target.files[0];
         var stream = ss.createStream();
         // upload a file to the server.
-        var app=this;
         ss(socket).emit('upload', stream, {path:path,name:file.name,size: file.size},(res)=>{
            console.log(res);
            this.reloadFilesFromServer();
@@ -235,7 +217,7 @@ class  Browser extends React.Component {
         //window.open(url, url, 'height=800,width=800,resizable=yes,scrollbars=yes');
         socket.emit("content",{path:path},(data)=>{
             console.log(data);
-            this.setState({value:data});
+            this.setState({value:data,showcontext:false});
         });
     }
     mkdir=()=>{
@@ -269,10 +251,10 @@ class  Browser extends React.Component {
       this.setState({value:newValue});
     }
     genpath=(path)=>{
-        console.log("genpath=============")
-        console.log(path);
+        //console.log("genpath=============")
+        //console.log(path);
         var paths=path.split("\\");
-        console.log(paths);
+        //console.log(paths);
         var r=[]
         var i=0;
         while(i<paths.length){
@@ -386,7 +368,8 @@ class  Browser extends React.Component {
       </Nav>
     </Navbar.Collapse>
   </Navbar>
-<input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} /></div>);
+<input type="file" id="uploadInput" onChange={this.uploadFile} style={{display:this.state.displayUpload}} /></div>
+            );
             const ace=<AceEditor
                 style={{width:"100%"}}
                 mode="javascript"
@@ -416,23 +399,23 @@ class  Browser extends React.Component {
               var sortGlyph = "glyphicon glyphicon-sort";
               return (
                 <div> 
-                         <div style={{width:"100%",
-                                zIndex:2,
-                                maxHeight:"300px",
-                                overflow:"scroll"}}>
-                            {toolbar}
-                            <table className="table table-responsive table-striped table-hover">
-                              <thead><tr>
-                              <th><button onClick={this.pathSort} className="btn btn-default"><span className={sortGlyph}/>名称</button></th>
-                              <th><button onClick={this.sizeSort} className="btn btn-default"><span className={sortGlyph}/>大小</button></th>
-                              <th><button onClick={this.timeSort} className="btn btn-default"><span className={sortGlyph}/>修改日期</button></th>
-                              </tr></thead>
-                              <tbody>
-                              {files}
-                              </tbody>
-                              </table>
-                        </div>
-                        {ace}
+                     <div style={{width:"100%",
+                            zIndex:2,
+                            maxHeight:"300px",
+                            overflow:"scroll"}}>
+                        {toolbar}
+                        <table className="table table-responsive table-striped table-hover">
+                          <thead><tr>
+                          <th><button onClick={this.pathSort} className="btn btn-default"><span className={sortGlyph}/>名称</button></th>
+                          <th><button onClick={this.sizeSort} className="btn btn-default"><span className={sortGlyph}/>大小</button></th>
+                          <th><button onClick={this.timeSort} className="btn btn-default"><span className={sortGlyph}/>修改日期</button></th>
+                          </tr></thead>
+                          <tbody>
+                          {files}
+                          </tbody>
+                          </table>
+                    </div>
+                    {ace}
                 </div>)
             }
     }

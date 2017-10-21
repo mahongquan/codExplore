@@ -9,6 +9,21 @@ console.log(path.resolve(__dirname))
 var app_root=path.resolve(".")
 //var  app_root=path.normalize(".")
 //console.log(app_root)
+function deleteFolder(path) {
+    var files = [];
+    if( fs.existsSync(path) ) {
+        files = fs.readdirSync(path);
+        files.forEach(function(file,index){
+            var curPath = path + "/" + file;
+            if(fs.statSync(curPath).isDirectory()) { // recurse
+                deleteFolder(curPath);
+            } else { // delete file
+                fs.unlinkSync(curPath);
+            }
+        });
+        fs.rmdirSync(path);
+    }
+}
 function path_isdir(p){
     var stat=fs.statSync(p);
     if(stat.isDirectory()){
@@ -78,12 +93,7 @@ function parent(path1){
 }
 function remove(path1){
     var p = toLocalPath(path1)
-    if (path_isdir(p)){
-        fs.rmdirSync(p);
-    }
-    else{
-        fs.unlinkSync(p)
-    }
+    deleteFolder(path1);
     return {status:"success"};
 }
 function rename(path1,name){
