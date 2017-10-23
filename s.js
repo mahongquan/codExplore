@@ -9,6 +9,13 @@ console.log(path.resolve(__dirname))
 var app_root=path.resolve(".")
 //var  app_root=path.normalize(".")
 //console.log(app_root)
+function path_isdir(p){
+    var stat=fs.statSync(p);
+    if(stat.isDirectory()){
+      return true
+    }
+    return false;
+}
 function toPath(p){
     var stat=fs.statSync(p);
     if(stat.isDirectory()){
@@ -69,49 +76,34 @@ function parent(path1){
   var dic=toPath(parent1)
   return dic
 }
-//console.log(parent("."))
+function remove(path1){
+    var p = toLocalPath(path1)
+    if (path_isdir(p)){
+        fs.rmdirSync(p);
+    }
+    else{
+        fs.unlinkSync(p)
+    }
+    return {status:"success"};
+}
+function rename(path1,name){
+  var p = toLocalPath(path1)
+  var parent = path.dirname(p)
+  var updated = path.join(parent, name)
+  fs.renameSync(p, updated)
+  return {status:"success"};
+}
 function content(path1){
   var p = toLocalPath(path1)
   var r=fs.readFileSync(p);
-  //console.log(r);
   return decoder.write(r);
 }
-// def remove(request):
-//     p = toLocalPath(request.GET["path"])
-//     if os.path.isdir(p):
-//         shutil.rmtree(p)
-//     else:
-//         os.remove(p)
-//     return HttpResponse( json.dumps({"status":"success"}, ensure_ascii=False) )
-// def rename2(request):
-//  logging.info("rename==============")
-//  p = toLocalPath(request.GET["path"])
-//  name = request.GET["name"]
-//  parent = os.path.dirname(p)
-//  updated = os.path.join(parent, name)
-//  os.rename(p, updated)
-//  return HttpResponse(  json.dumps({"status":"success"}, ensure_ascii=False) ) 
-// def upload(request):
-//     p = toLocalPath(request.GET["path"])
 
-//     name = request.GET["name"]
-//     pweb = toWebPath(request.GET["path"])+"/"+name
-//     uploaded = request.FILES[ 'file' ]
-//     data=uploaded.read()
-//     uploadedPath = os.path.join(p, name)
-//     try:
-//         f = open(uploadedPath, 'wb' ) # Writing in binary mode for windows..?
-//         f.write( data )
-//         f.close( )
-//         res={"status":"success", "files":"./"+pweb}
-//     except e:
-//         res={"status":"fail", "files":str(e)}
-//     return HttpResponse( json.dumps(res, ensure_ascii=False) ) 
-// def mkdir(request):
-//     p = toLocalPath(request.GET["path"])
-//     name = request.GET["name"]
-//     os.mkdir(os.path.join(p, name))
-//     return HttpResponse( json.dumps({"status":"success"}, ensure_ascii=False) ) 
+function mkdir(path1,foldername){
+  var p = toLocalPath(path1)
+  fs.mkdirSync(path.join(p, foldername))
+  return {status:"success"}
+}
 function DateStr(date) {
     var year = date.getFullYear();
     var month = date.getMonth() + 1;
@@ -154,20 +146,37 @@ io.sockets.on('connection', function( socket ) {
     console.log(data);
     callback(parent(data.path));
   });
+  socket.on('mkdir', function( data, callback ) {       
+    console.log("mkdir")
+    console.log(data);
+    callback(mkdir(data.path,data.name));
+  });
+  socket.on('rename', function( data, callback ) {       
+    console.log("rename")
+    console.log(data);
+    callback(rename(data.path,data.name));
+  });
+  socket.on('remove', function( data, callback ) {       
+    console.log("remove")
+    console.log(data);
+    callback(remove(data.path));
+  });
   socket.on('content', function( data, callback ) {       
     console.log("content")
     console.log(data);
     callback(content(data.path));
   });  
+  ss(socket).on('upload', function(stream, data,callback) {
+    var p = toLocalPath(data.path);
+    var filename=path.join(p,data.name);
+    stream.pipe(fs.createWriteStream(filename));
+    // var buffers = [];
+    // stream.on('data', function(data) { buffers.push(data); });
+    stream.on('end', function() {
+         callback({success:true});
+    });
+  });    
   ss(socket).on('file', function(stream, data,callback) {
-    // console.log(data);
-    // var p=path.join(__dirname, 'media');
-   //    p=path.join(p, data.name);
-   //    var ls=fs.createWriteStream(p);
-    // ls.on('close', () => {
-    //   console.log('closed');
-    // });
-   //    stream.pipe(ls);
     var buffers = [];
     stream.on('data', function(data) { buffers.push(data); });
     stream.on('end', function() {

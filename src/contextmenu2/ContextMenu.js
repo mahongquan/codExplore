@@ -8,7 +8,7 @@ import AbstractMenu from './AbstractMenu';
 import SubMenu from './SubMenu';
 import { hideMenu } from './actions';
 import { cssClasses, callIfExists, store } from './helpers';
-
+import {Popover} from "react-bootstrap";
 export default class ContextMenu extends AbstractMenu {
     static propTypes = {
         id: PropTypes.string.isRequired,
@@ -147,7 +147,7 @@ export default class ContextMenu extends AbstractMenu {
     }
 
     getMenuPosition = (x = 0, y = 0) => {
-        x=0;y=0;
+        //x=0;y=0;
         let menuStyles = {
             top: y,
             left: x
@@ -155,24 +155,24 @@ export default class ContextMenu extends AbstractMenu {
 
         if (!this.menu) return menuStyles;
 
-        // const { innerWidth, innerHeight } = window;
-        // const rect = this.menu.getBoundingClientRect();
+        const { innerWidth, innerHeight } = window;
+        const rect = this.menu.getBoundingClientRect();
 
-        // if (y + rect.height > innerHeight) {
-        //     menuStyles.top -= rect.height;
-        // }
+        if (y + rect.height > innerHeight) {
+            menuStyles.top -= rect.height;
+        }
 
-        // if (x + rect.width > innerWidth) {
-        //     menuStyles.left -= rect.width;
-        // }
+        if (x + rect.width > innerWidth) {
+            menuStyles.left -= rect.width;
+        }
 
-        // if (menuStyles.top < 0) {
-        //     menuStyles.top = rect.height < innerHeight ? (innerHeight - rect.height) / 2 : 0;
-        // }
+        if (menuStyles.top < 0) {
+            menuStyles.top = rect.height < innerHeight ? (innerHeight - rect.height) / 2 : 0;
+        }
 
-        // if (menuStyles.left < 0) {
-        //     menuStyles.left = rect.width < innerWidth ? (innerWidth - rect.width) / 2 : 0;
-        // }
+        if (menuStyles.left < 0) {
+            menuStyles.left = rect.width < innerWidth ? (innerWidth - rect.width) / 2 : 0;
+        }
 
         return menuStyles;
     }
@@ -188,11 +188,11 @@ export default class ContextMenu extends AbstractMenu {
         if (isVisible)
         {
             style = { 
-            position: 'relative',display:"inline-block",opacity: 0, pointerEvents: 'none' };
+            position: 'fixed',display:"inline-block",opacity: 0, pointerEvents: 'none' };
         }
         else{
             style = { 
-            position: 'relative',display:"none",opacity: 0, pointerEvents: 'none' };
+            position: 'fixed',display:"none",opacity: 0, pointerEvents: 'none' };
         }
         const menuClassnames = cx(cssClasses.menu, className, {
             [cssClasses.menuVisible]: isVisible
