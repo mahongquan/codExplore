@@ -4,6 +4,7 @@ import 'brace/mode/javascript';
 import 'brace/theme/github';
 import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
 import {Tooltip,ButtonToolbar,Button,OverlayTrigger} from "react-bootstrap";
+import update from 'immutability-helper';
 var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
 class File extends React.Component {
