@@ -1,14 +1,34 @@
 import React from 'react';
-import AceEditor from 'react-ace';
-import 'brace/mode/javascript';
-import 'brace/theme/github';
+// import AceEditor from 'react-ace';
+// import 'brace/mode/javascript';
+// import 'brace/mode/python';
+// import 'brace/theme/github';
 //import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
 import {Button,Overlay,Navbar,Nav,NavItem,Tooltip,OverlayTrigger} from "react-bootstrap";
-import update from 'immutability-helper';
+//import update from 'immutability-helper';
 //import "./react-contextmenu.css"
+//import Autocomplete from './Autocomplete2';
+import RichTextEditor from 'react-rte';
 var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
 var ss = require('socket.io-stream');
+let styles = {
+  item: {
+    padding: '2px 6px',
+    cursor: 'default'
+  },
+
+  highlightedItem: {
+    color: 'white',
+    background: 'hsl(200, 50%, 50%)',
+    padding: '2px 6px',
+    cursor: 'default'
+  },
+
+  menu: {
+    border: 'solid 1px #ccc'
+  }
+}
 class File extends React.Component {
     glyphClass=()=>{
         var className = "glyphicon ";
@@ -45,9 +65,9 @@ class File extends React.Component {
             style1={display:"inline-block",marginRight:"10px",marginLeft: "10px"}   
         }
         return (
-            <div style={style1} onContextMenu={this.props.handleContextMenu}  onClick={this.props.onClick}>
+            <a style={style1} onContextMenu={this.props.handleContextMenu}  onClick={this.props.onClick}>
                 {this.props.name}
-            </div>);
+            </a>);
     }
 
     render=()=>{
@@ -78,7 +98,27 @@ class File extends React.Component {
     }
 };
 class  Browser extends React.Component {
+  channels_change=(event, value)=>{
+    console.log("auto_change");
+    //this.setState({ yiqixinghao_value:value, auto_loading: false });
+    this.channels_select(null,value) 
+  }
+  channels_input=(event)=>{
+    console.log(event);
+    //this.setState({ yiqixinghao_value:value, auto_loading: false });
+    this.channels_select(null,event) 
+  }
+  channels_select=(value, item)=>{
+      console.log("selected");
+      this.setState({channels:item});
+  }
+   matchStateToTerm=(state, value)=>{
+     return      state.toLowerCase().indexOf(value.toLowerCase()) !== -1 ;
+  }
     state= {
+          rich:RichTextEditor.createEmptyValue(),
+          channels:"",
+          isroot:true,
           paths : ["."],
           files: [],
           sort: File.pathSort,
@@ -87,10 +127,12 @@ class  Browser extends React.Component {
           displayUpload:"none",
           showcontext: false,
           target:null,
-          backgroundColor:[],
+          pathIdx:null,
           openfilepath:null,
           filecontent:"",
           filechange:false,
+          mode:"text",
+          connect_error:false,
     }
   handleContextMenu = (event) => {
     //console.log(event);
@@ -102,6 +144,12 @@ class  Browser extends React.Component {
         },5000);
   }
     loadFilesFromServer=(path)=>{
+        if (path==="." || path==="./"){
+            this.setState({isroot:true});
+        }
+        else{
+            this.setState({isroot:false});   
+        }
         var self=this;
             socket.emit("list",{path:path},(data)=>{
                 var files = data.children.sort(self.state.sort);
@@ -131,7 +179,7 @@ class  Browser extends React.Component {
         if (this.state.paths.length>0)
             return this.state.paths[this.state.paths.length-1]
         else
-            return this.state.paths[0]
+            return "."
     }
 
     onBack =()=>{
@@ -150,12 +198,23 @@ class  Browser extends React.Component {
 
     onParent=()=>{
         console.log("onParent");
-        var data={path:this.currentPath()};
-        console.log(data);
-        socket.emit("parent",data,(res)=>{
-            var parentPath = res.path;
-            this.updatePath(parentPath);
-        });
+        var thepath=this.currentPath();
+        if(thepath==="."){
+            alert(". 已经是根目录!");
+        }
+        else{
+            var data={path:thepath};
+            console.log(data);
+            socket.emit("parent",data,(res)=>{
+                if (res.isroot){
+                    alert("已经是根目录!");
+                }
+                else{
+                    var parentPath = res.path;
+                    this.updatePath(parentPath);
+                }
+            });
+        }
     }
 
     alternateView=()=>{
@@ -181,6 +240,12 @@ class  Browser extends React.Component {
         ss.createBlobReadStream(file).pipe(stream);
     }
     componentDidMount=()=>{
+        socket.on("connect_error",()=>{
+          this.setState({connect_error:true});
+        })
+        socket.on("connect",()=>{
+          this.setState({connect_error:false});
+        })
         console.log("mount======");
         console.log(this.props.initpath);
         if (this.props.initpath)
@@ -215,17 +280,27 @@ class  Browser extends React.Component {
     getContent=(path)=>{
         console.log("content");
         console.log(path);
-        //var url = buildGetContentUrl(path);
-        //console.log(url);
-        //window.open(url, url, 'height=800,width=800,resizable=yes,scrollbars=yes');
         socket.emit("content",{path:path},(data)=>{
             //console.log(data);
+            var ext=path.split(".").pop();
+            let mode;
+            if (ext==="js"){
+                mode="javascript";
+            }   
+            else if (ext==="py"){
+                mode="python";
+            }
+            else{
+                mode="text";
+            }
             this.setState({
                 filecontent:data
                 ,filechange:false
                 ,showcontext:false
                 ,openfilepath:path
+                ,mode:mode
             });
+            this.setState({rich:RichTextEditor.createValueFromString(data,"html")});
         });
     }
     mkdir=()=>{
@@ -265,6 +340,7 @@ class  Browser extends React.Component {
         //console.log("genpath=============")
         //console.log(path);
         var paths=path.split("/");
+        //if (paths.length==1) return null;
         //console.log(paths);
         var r=[]
         var i=0;
@@ -279,26 +355,34 @@ class  Browser extends React.Component {
             r.push([s,paths[i]])
             i++;
         }
-        console.log(this.state.backgroundColor);
+        r.shift();
+        // if(r.length===0){
+        //     this.isroot=true;
+        // }
+        // else{
+        //     this.isroot=false;   
+        // }
         var hs=r.map((item,idx)=>{
+            let style1;
+            if(idx===this.state.pathIdx){
+                style1={marginLeft:"6px",backgroundColor:"#00C"};
+            }
+            else{
+                style1={marginLeft:"6px"}
+            }
             return <span key={idx} 
                 onMouseEnter={()=>this.onMouseEnter(idx)}
                 onMouseLeave={()=>this.onMouseLeave(idx)}
-                style={{marginLeft:"6px",backgroundColor:this.state.backgroundColor[idx]}} 
+                style={style1} 
                 onClick={()=>{this.linkclick(item[0])}}>{item[1]}/</span>
         })
         return hs;
     }
     onMouseLeave=(idx)=>{
-        console.log(idx);
-        console.log(this.state.backgroundColor);
-        const bg2=update(this.state.backgroundColor,{[idx]:{$set:"#000"}})
-        console.log(bg2);
-        this.setState({backgroundColor:bg2});
+        this.setState({pathIdx:null});
     }
     onMouseEnter=(idx)=>{
-        const bg2=update(this.state.backgroundColor,{[idx]:{$set:"#00C"}})
-        this.setState({backgroundColor:bg2});
+        this.setState({pathIdx:idx});
     }
     linkclick=(e)=>{
         console.log(e);
@@ -333,32 +417,13 @@ class  Browser extends React.Component {
     savefilecontent=()=>{
         socket.emit("savefile",{path:this.state.openfilepath,content:this.state.filecontent},()=>{
                 this.reloadFilesFromServer();
-                this.setState({showcontext:false});
+                this.setState({
+                    showcontext:false
+                    ,filechange:false
+                });
         });
     }
-    genpath=(path)=>{
-        console.log("genpath=============")
-        console.log(path);
-        var paths=path.split("\\");
-        console.log(paths);
-        var r=[]
-        var i=0;
-        while(i<paths.length){
-            var s="";
-            for(var j=0;j<i+1;j++){
-                s+=paths[j];
-                if (j<i) s+="\\";
-            }
-            //console.log(paths[i])
-            //console.log(s)
-            r.push([s,paths[i]])
-            i++;
-        }
-        var hs=r.map((item,idx)=>{
-            return <span key={idx} style={{marginLeft:"6px"}} onClick={()=>{this.linkclick(item[0])}}>{item[1]}\</span>
-        })
-        return hs;
-    }
+
     linkclick=(e)=>{
         console.log(e);
         this.updatePath(e);
@@ -384,6 +449,7 @@ class  Browser extends React.Component {
         var className = this.state.gridView ? listGlyph : gridGlyph;
         var toolbar=(
 <div>
+    <div align="center" style={{display:this.state.connect_error?"":"none",textAlign: "center",color:"red"}} >!!!!!!!!!!连接错误!!!!!!!</div>
             <Overlay target={this.state.target} 
                 container={this} show={this.state.showcontext}  placement="bottom">
                 <Tooltip id="tooltip1" >
@@ -394,6 +460,7 @@ class  Browser extends React.Component {
             <Navbar inverse collapseOnSelect>
                 <Navbar.Header>
                   <Navbar.Brand>
+                  code explorer
                   </Navbar.Brand>
                   <Navbar.Toggle />
                 </Navbar.Header>
@@ -405,7 +472,7 @@ class  Browser extends React.Component {
                             </span>
                         </OverlayTrigger>
                     </NavItem>
-                    <NavItem eventKey={2} href="#">
+                    <NavItem disabled={this.state.isroot} eventKey={2} href="#">
                         <OverlayTrigger placement="bottom" overlay={tooltipparent}>
                             <span onClick={this.onParent} className="glyphicon glyphicon-arrow-up"/>
                        </OverlayTrigger>
@@ -436,18 +503,33 @@ class  Browser extends React.Component {
         );
         const ace=(
             <div>
+                {this.state.openfilepath}
                 <Button disabled={!this.state.filechange} 
-                    onClick={this.savefilecontent}>save
+                    onClick={this.savefilecontent}>
+                    save
                 </Button>
-                <AceEditor
-                style={{width:"100%"}}
-                mode="javascript"
-                theme="github"
-                value={this.state.filecontent}
-                onChange={this.onChange}
-                name="UNIQUE_ID_OF_DIV"
-                editorProps={{$blockScrolling: true}}
-                />
+                <Button disabled={!this.state.filechange} onClick={()=> {this.refs.editor.editor.undo()}}> 
+                    <span  style={{
+                        transform:"scaleX(-1)",
+                        filter:"FlipH"}}
+                        className="glyphicon glyphicon-share-alt"
+                     />
+                </Button>
+                <Button disabled={!this.state.filechange} onClick={()=> {this.refs.editor.editor.redo()}}> 
+                    <span className="glyphicon glyphicon-share-alt"  />
+                </Button>
+                <Button  onClick={()=> {
+                    console.log(this.refs.editor);
+                    this.refs.editor.editor.showSettingsMenu();
+                }}> 
+                    settings
+                </Button>
+                <RichTextEditor
+                      value={
+                          this.state.rich// this.state.contact.detail
+                      }
+                      onChange={this.detailchange}
+                    />
             </div>
         );
         let dircontent;

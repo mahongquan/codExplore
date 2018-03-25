@@ -4,7 +4,8 @@ console.log(path.resolve(__dirname))
 //console.log(path)
 var app_root=path.resolve(".")
 //var  app_root=path.normalize(".")
-//console.log(app_root)
+console.log(app_root)
+console.log(app_root.replace(/\\/g, "/"))
 function toPath(p){
     var stat=fs.statSync(p);
     return {"path": path.relative(app_root,p),

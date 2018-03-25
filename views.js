@@ -1,62 +1,60 @@
-var path=require('path')
-var fs=require('fs')
-console.log(path.resolve(__dirname))
+var path=require('path');
+var fs=require('fs');
+console.log(path.resolve(__dirname));
 //console.log(path)
-var app_root=path.resolve(".")
-//var  app_root=path.normalize(".")
-//console.log(app_root)
+var app_root=path.resolve(".");
 function toPath(p){
     var stat=fs.statSync(p);
     return {"path": path.relative(app_root,p),
             "name": path.basename(p),
             "time": stat.mtime,
             "isdir": stat.isDirectory(),
-            "size":stat.size}
+            "size":stat.size};
 }
 //console.log(toPath("run.bat"))
 //console.log(toPath("static"))
 function toLocalPath(path1){
-    var fsPath = path.resolve(app_root, path1)
+    var fsPath = path.resolve(app_root, path1);
     console.log(fsPath);
     //if(os.path.commonprefix([app_root, fsPath]) != app_root){
     //    raise Exception("Unsafe path "+ fsPath+" is not a  sub-path  of root "+ app_root)
     //}
-    return fsPath
+    return fsPath;
 }
 //toLocalPath("abc")
 function toWebPath(path){
-     return "/static/"+path
+     return "/static/"+path;
 }
 function children(path1){
-    console.info(path1)
-    var p = toLocalPath(path1)
+    console.info(path1);
+    var p = toLocalPath(path1);
     if (fs.existsSync(p)){
 
     }
     else{
-        p= toLocalPath(".")
+        p= toLocalPath(".");
     }
-    var children = fs.readdirSync(p)
+    var children = fs.readdirSync(p);
     var children_stats=children.map((one, idx) =>{
         var p1=p+"/"+one;
         return toPath(p1);
     });
-    dic={"path": p,"children": children_stats}
-    return dic
+    dic={"path": p,"children": children_stats};
+    return dic;
 }
 //console.info(children("."))
 function parent(path1){
-    let parent1
+    let parent1;
 	if(path1 === app_root){
-	    parent1 = path1
+	    parent1 = path1;
     }
 	else{
-	    parent1 = path.dirname(path1)
+	    parent1 = path.dirname(path1);
     }
-	var dic=toPath(parent1)
-	return dic
+	var dic=toPath(parent1);
+	return dic;
 }
-console.log(parent("."))
+console.log(parent("."));
 // def content(request):
 // 	p = toWebPath(request.GET["path"])
 // 	return HttpResponseRedirect(p)

@@ -1,12 +1,13 @@
-const express = require('express')
+const express = require('express');
 var ss = require('socket.io-stream');
-var path=require('path')
-var fs=require('fs')
+var path=require('path');
+var fs=require('fs');
 const { StringDecoder } = require('string_decoder');
 const decoder = new StringDecoder('utf8');
-console.log(path.resolve(__dirname))
+console.log(path.resolve(__dirname));
 //console.log(path)
-var app_root=path.resolve(".")
+var app_root=path.resolve(".");
+//app_root=app_root.replace(/\\/g, "/");
 //var  app_root=path.normalize(".")
 //console.log(app_root)
 function deleteFolder(path) {
@@ -27,7 +28,7 @@ function deleteFolder(path) {
 function path_isdir(p){
     var stat=fs.statSync(p);
     if(stat.isDirectory()){
-      return true
+      return true;
     }
     return false;
 }
@@ -37,6 +38,7 @@ function toPath(p){
     // console.log(app_root)
     // console.log(p);
     var lp=p.substring(app_root.length+1);
+    lp="./"+lp;
     if(stat.isDirectory()){
       return {"path": lp,
             "name": path.basename(p),
@@ -55,68 +57,72 @@ function toPath(p){
 //console.log(toPath("run.bat"))
 //console.log(toPath("static"))
 function toLocalPath(path1){
-    var fsPath = path.resolve(app_root, path1)
+    var fsPath = path.resolve(app_root, path1);
+    fsPath=fsPath.replace(/\\/g, "/");
     console.log(fsPath);
     //if(os.path.commonprefix([app_root, fsPath]) != app_root){
     //    raise Exception("Unsafe path "+ fsPath+" is not a  sub-path  of root "+ app_root)
     //}
-    return fsPath
+    return fsPath;
 }
 //toLocalPath("abc")
 function toWebPath(path){
-     return "/static/"+path
+     return "/static/"+path;
 }
 function children(path1){
-    console.info(path1)
-    var p = toLocalPath(path1)
+    console.info(path1);
+    var p = toLocalPath(path1);
     if (fs.existsSync(p)){
 
     }
     else{
-        p= toLocalPath(".")
+        p= toLocalPath(".");
     }
-    var children = fs.readdirSync(p)
+    var children = fs.readdirSync(p);
     var children_stats=children.map((one, idx) =>{
         var p1=p+"/"+one;
         return toPath(p1);
     });
-    dic={"path": p,"children": children_stats}
-    return dic
+    dic={"path": p,"children": children_stats};
+    return dic;
 }
 //console.info(children("."))
 function parent(path1){
-  let parent1
-  if(path1 === app_root){
-      parent1 = path1
-    }
-  else{
-      parent1 = path.dirname(path1)
-    }
-  var dic=toPath(parent1)
-  return dic
+  var isroot=false;
+  let parent1= path.dirname(path1);
+  if(path1==="."){
+      isroot=true;
+  }
+  var dic=toPath(parent1);
+  dic.isroot=isroot;
+  return dic;
 }
 function remove(path1){
-    var p = toLocalPath(path1)
-    deleteFolder(path1);
+    var curPath = toLocalPath(path1);
+    if(fs.statSync(curPath).isDirectory()) { // recurse
+        deleteFolder(curPath);
+    } else { // delete file
+        fs.unlinkSync(curPath);
+    }
     return {status:"success"};
 }
 function rename(path1,name){
-  var p = toLocalPath(path1)
-  var parent = path.dirname(p)
-  var updated = path.join(parent, name)
-  fs.renameSync(p, updated)
+  var p = toLocalPath(path1);
+  var parent = path.dirname(p);
+  var updated = path.join(parent, name);
+  fs.renameSync(p, updated);
   return {status:"success"};
 }
 function content(path1){
-  var p = toLocalPath(path1)
+  var p = toLocalPath(path1);
   var r=fs.readFileSync(p);
   return decoder.write(r);
 }
 
 function mkdir(path1,foldername){
-  var p = toLocalPath(path1)
-  fs.mkdirSync(path.join(p, foldername))
-  return {status:"success"}
+  var p = toLocalPath(path1);
+  fs.mkdirSync(path.join(p, foldername));
+  return {status:"success"};
 }
 function DateStr(date) {
     var year = date.getFullYear();
@@ -129,8 +135,8 @@ function DateStr(date) {
     return year + "-" + s_month + "-" + s_day ;
 }
 const port =8000;// parseInt(process.env.PORT, 10) || 8000
-const dev = process.env.NODE_ENV !== 'production'
-const server = express()
+const dev = process.env.NODE_ENV !== 'production';
+const server = express();
 // server.get('/fonts/glyphicons-halflings-regular.woff2', (req, res) => {
 //   res.redirect('/static/fonts/glyphicons-halflings-regular.woff2')
 // })
@@ -144,14 +150,14 @@ const server = express()
 // })
 server.use(express.static('public'));
 var s=server.listen(port, (err) => {
-  if (err) throw err
-  console.log(`> Ready on http://localhost:${port}`)
-})
+  if (err) throw err;
+  console.log(`> Ready on http://localhost:${port}`);
+});
 const io = require('socket.io')(s);
 io.sockets.on('connection', function( socket ) {
   console.log('connection');
   socket.on('list', function( data, callback ) {       
-    console.log("list")
+    console.log("list");
     console.log(data);
     callback(children(data.path));
   });
