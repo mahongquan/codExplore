@@ -1,34 +1,15 @@
 import React from 'react';
-// import AceEditor from 'react-ace';
-// import 'brace/mode/javascript';
-// import 'brace/mode/python';
-// import 'brace/theme/github';
-//import { ContextMenu, MenuItem, ContextMenuTrigger } from "./contextmenu2";
-import {Button,Overlay,Navbar,Nav,NavItem,Tooltip,OverlayTrigger} from "react-bootstrap";
-//import update from 'immutability-helper';
-//import "./react-contextmenu.css"
-//import Autocomplete from './Autocomplete2';
-import RichTextEditor from 'react-rte';
+import AceEditor from 'react-ace';
+import 'brace/mode/javascript';
+import 'brace/mode/jsx';
+import 'brace/mode/markdown';
+import 'brace/mode/python';
+import 'brace/theme/github';
+import {DropdownButton,MenuItem, Button,Overlay,Navbar,Nav,NavItem,Tooltip,OverlayTrigger} from "react-bootstrap";
+
 var io = require("socket.io-client");
 var socket=io('http://localhost:8000');
 var ss = require('socket.io-stream');
-let styles = {
-  item: {
-    padding: '2px 6px',
-    cursor: 'default'
-  },
-
-  highlightedItem: {
-    color: 'white',
-    background: 'hsl(200, 50%, 50%)',
-    padding: '2px 6px',
-    cursor: 'default'
-  },
-
-  menu: {
-    border: 'solid 1px #ccc'
-  }
-}
 class File extends React.Component {
     glyphClass=()=>{
         var className = "glyphicon ";
@@ -41,7 +22,7 @@ class File extends React.Component {
         let style1;
         if (this.props.isdir){
             console.log("isdir");
-            style1={backgroundColor:"#cc0"}
+            style1={backgroundColor:"#aa0"}
         }
         else{
             style1={}   
@@ -98,25 +79,7 @@ class File extends React.Component {
     }
 };
 class  Browser extends React.Component {
-  channels_change=(event, value)=>{
-    console.log("auto_change");
-    //this.setState({ yiqixinghao_value:value, auto_loading: false });
-    this.channels_select(null,value) 
-  }
-  channels_input=(event)=>{
-    console.log(event);
-    //this.setState({ yiqixinghao_value:value, auto_loading: false });
-    this.channels_select(null,event) 
-  }
-  channels_select=(value, item)=>{
-      console.log("selected");
-      this.setState({channels:item});
-  }
-   matchStateToTerm=(state, value)=>{
-     return      state.toLowerCase().indexOf(value.toLowerCase()) !== -1 ;
-  }
     state= {
-          rich:RichTextEditor.createEmptyValue(),
           channels:"",
           isroot:true,
           paths : ["."],
@@ -282,13 +245,21 @@ class  Browser extends React.Component {
         console.log(path);
         socket.emit("content",{path:path},(data)=>{
             //console.log(data);
+        
+            //
             var ext=path.split(".").pop();
             let mode;
             if (ext==="js"){
                 mode="javascript";
-            }   
+            }  
+            else if (ext==="jsx"){
+                mode="jsx";
+            }
             else if (ext==="py"){
                 mode="python";
+            }
+            else if (ext==="md"){
+                mode="markdown";
             }
             else{
                 mode="text";
@@ -299,8 +270,14 @@ class  Browser extends React.Component {
                 ,showcontext:false
                 ,openfilepath:path
                 ,mode:mode
+            },()=>{
+                setTimeout(()=>{
+                        var undo=this.refs.editor.editor.getSession().getUndoManager();//.markClean();
+                        undo.reset();
+                    },1000//wait 1000ms untill render finish
+                );
             });
-            this.setState({rich:RichTextEditor.createValueFromString(data,"html")});
+
         });
     }
     mkdir=()=>{
@@ -331,6 +308,7 @@ class  Browser extends React.Component {
     }
     onChange=(newValue)=>{
       //console.log('change',newValue);
+
         this.setState({
             filecontent:newValue
             ,filechange:true
@@ -431,6 +409,9 @@ class  Browser extends React.Component {
     rootclick=()=>{
         this.updatePath(".")
     }
+    loadeditor=(editor)=>{
+        console.log(editor);
+    }
     render=()=>{
         console.log(this.state.paths);
         const tooltipback = (
@@ -448,8 +429,8 @@ class  Browser extends React.Component {
         var listGlyph = "glyphicon glyphicon-list";
         var className = this.state.gridView ? listGlyph : gridGlyph;
         var toolbar=(
-<div>
-    <div align="center" style={{display:this.state.connect_error?"":"none",textAlign: "center",color:"red"}} >!!!!!!!!!!连接错误!!!!!!!</div>
+    <div>
+        <div align="center" style={{display:this.state.connect_error?"":"none",textAlign: "center",color:"red"}} >!!!!!!!!!!连接错误!!!!!!!</div>
             <Overlay target={this.state.target} 
                 container={this} show={this.state.showcontext}  placement="bottom">
                 <Tooltip id="tooltip1" >
@@ -460,7 +441,7 @@ class  Browser extends React.Component {
             <Navbar inverse collapseOnSelect>
                 <Navbar.Header>
                   <Navbar.Brand>
-                  code explorer
+                  Code Explore
                   </Navbar.Brand>
                   <Navbar.Toggle />
                 </Navbar.Header>
@@ -508,6 +489,11 @@ class  Browser extends React.Component {
                     onClick={this.savefilecontent}>
                     save
                 </Button>
+                 <DropdownButton title={this.state.mode} id="id_dropdown3">
+                    <MenuItem onSelect={()=>this.setState({mode:"text"})}>text</MenuItem>
+                    <MenuItem onSelect={()=>this.setState({mode:"python"})}>python</MenuItem>
+                    <MenuItem onSelect={()=>this.setState({mode:"javascript"})}>javascript</MenuItem>
+                 </DropdownButton>
                 <Button disabled={!this.state.filechange} onClick={()=> {this.refs.editor.editor.undo()}}> 
                     <span  style={{
                         transform:"scaleX(-1)",
@@ -520,16 +506,33 @@ class  Browser extends React.Component {
                 </Button>
                 <Button  onClick={()=> {
                     console.log(this.refs.editor);
-                    this.refs.editor.editor.showSettingsMenu();
+
+                    //this.refs.editor.editor.showSettingsMenu();
                 }}> 
                     settings
                 </Button>
-                <RichTextEditor
-                      value={
-                          this.state.rich// this.state.contact.detail
-                      }
-                      onChange={this.detailchange}
-                    />
+                <Button  onClick={()=> {
+                   var undo=this.refs.editor.editor.getSession().getUndoManager();//.markClean();
+                   undo.reset();
+                }}> 
+                    reset undo
+                </Button>
+                <Button  onClick={()=> {
+                   var undo=this.refs.editor.editor.getSession().getUndoManager();//.markClean();
+                   console.log(undo);
+                }}> 
+                    show undo
+                </Button>
+                <AceEditor ref="editor"
+                style={{width:"100%"}}
+                mode={this.state.mode}
+                theme="github"
+                value={this.state.filecontent}
+                onChange={this.onChange}
+                onLoad={this.loadeditor}
+                name="UNIQUE_ID_OF_DIV"
+                editorProps={{$blockScrolling: true}}
+                />
             </div>
         );
         let dircontent;

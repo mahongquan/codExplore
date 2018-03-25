@@ -3,6 +3,7 @@ import logging
 from django.http import HttpResponse,HttpResponseRedirect
 import mysite.settings
 import os, os.path, json, shutil
+
 app_root=os.path.normpath(mysite.settings.MEDIA_ROOT)
 def toPath(p):
     return {"path": os.path.relpath(p, app_root),

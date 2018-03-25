@@ -115,7 +115,7 @@ setPositions () {
       tile.markForDeletion = false;
     });
   });
-};
+}
 
 static fourProbability = 0.1;
 
