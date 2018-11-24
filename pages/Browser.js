@@ -565,8 +565,8 @@ class  Browser extends React.Component {
              <Head>
 	      <title>2048</title>
 	      <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-          <link rel="stylesheet" type="text/css" href="/bootstrap.min.css' />
-          <link rel="stylesheet" type="text/css" href="/bootstrap-theme.min.css' />
+          <link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
+          <link rel="stylesheet" type="text/css" href="/static/bootstrap-theme.min.css" />
       </Head>
                     <div style={{width:"100%",
                             backgroundColor:"#888", 
