@@ -1,4 +1,5 @@
 import React from 'react';
+import Head from 'next/head'
 //import AceEditor from 'react-ace';
 //import 'brace/mode/javascript';
 //import 'brace/mode/jsx';
@@ -561,6 +562,12 @@ class  Browser extends React.Component {
         }
         return (
                 <div>
+             <Head>
+	      <title>2048</title>
+	      <meta http-equiv="content-type" content="text/html;charset=utf-8" />
+          <link rel="stylesheet" type="text/css" href="/bootstrap.min.css' />
+          <link rel="stylesheet" type="text/css" href="/bootstrap-theme.min.css' />
+      </Head>
                     <div style={{width:"100%",
                             backgroundColor:"#888", 
                             maxHeight:"300px",
