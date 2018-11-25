@@ -1,4 +1,6 @@
 const express = require('express');
+const { StringDecoder } = require('string_decoder');
+const decoder = new StringDecoder('utf8');
 const next = require('next');
 var ss = require('socket.io-stream');
 var path=require('path');
@@ -63,8 +65,9 @@ function parent(path1){
 function content(path1){
   var p = toLocalPath(path1);
   var r=fs.readFileSync(p);
-  console.log(r);
-  return r;
+  return decoder.write(r);
+  // console.log(r);
+  // return r;
 }
 // def remove(request):
 //     p = toLocalPath(request.GET["path"])

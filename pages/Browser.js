@@ -273,11 +273,11 @@ class  Browser extends React.Component {
                 ,openfilepath:path
                 ,mode:mode
             },()=>{
-                setTimeout(()=>{
-                        var undo=this.refs.editor.editor.getSession().getUndoManager();//.markClean();
-                        undo.reset();
-                    },1000//wait 1000ms untill render finish
-                );
+                // setTimeout(()=>{
+                //         var undo=this.refs.editor.editor.getSession().getUndoManager();//.markClean();
+                //         undo.reset();
+                //     },1000//wait 1000ms untill render finish
+                // );
             });
 
         });
@@ -415,7 +415,7 @@ class  Browser extends React.Component {
         console.log(editor);
     }
     render=()=>{
-        console.log(this.state.paths);
+        console.log(this.state);
         const tooltipback = (
           <Tooltip id="tooltipback"><strong>back</strong></Tooltip>
         );
@@ -561,12 +561,12 @@ class  Browser extends React.Component {
             );
         }
         return (
-                <div>
+                <div  style={{backgroundColor:"#aaa"}}>
              <Head>
 	      <title>2048</title>
-	      <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-          <link rel="stylesheet" type="text/css" href="/static/bootstrap.min.css" />
-          <link rel="stylesheet" type="text/css" href="/static/bootstrap-theme.min.css" />
+	      <meta httpEquiv="content-type" content="text/html;charset=utf-8" />
+          <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.min.css" />
+          <link rel="stylesheet" type="text/css" href="/static/css/bootstrap-theme.min.css" />
       </Head>
                     <div style={{width:"100%",
                             backgroundColor:"#888", 

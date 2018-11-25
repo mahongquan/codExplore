@@ -1,0 +1,49 @@
+Arguments: 
+  /home/mhq/download/node-v8.4.0-linux-x64/bin/node /home/mhq/download/node-v8.4.0-linux-x64/bin/yarn add immutability-helper --save
+
+PATH: 
+  /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/mhq/下载/node-v6.11.1-linux-x64/bin:/home/mhq/download/node-v8.4.0-linux-x64/bin
+
+Yarn version: 
+  1.2.1
+
+Node version: 
+  8.4.0
+
+Platform: 
+  linux x64
+
+npm manifest: 
+  {
+    "name": "codeExplore",
+    "version": "1.0.0",
+    "proxy": "http://localhost:8000/",
+    "homepage": ".",
+    "scripts": {
+      "dev": "node server.js",
+      "build": "next build",
+      "start": "react-scripts start"
+    },
+    "dependencies": {
+      "bootstrap": "^3.3.7",
+      "classnames": "^2.2.5",
+      "express": "^4.16.2",
+      "react": "^16.0.0",
+      "react-ace": "^5.4.0",
+      "react-bootstrap": "^0.31.3",
+      "react-dom": "^16.0.0",
+      "react-scripts": "^1.0.14",
+      "react-sortable-tree": "^1.4.0",
+      "socket.io": "^2.0.3",
+      "socket.io-stream": "^0.9.1"
+    }
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
+
+Trace: 
+  Error: ENOENT: no such file or directory, open '/home/mhq/web/codeExplore/node_modules/http-proxy-middleware/node_modules/is-extglob/LICENSE'
